@@ -1,0 +1,482 @@
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  font-family: Inter, 'PingFang SC', 'Microsoft Yahei', system-ui, sans-serif;
+  background-color: #f7f5ff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+a {
+  color: inherit;
+}
+
+/* 筛选栏样式 */
+.filter-bar {
+  background: #fff;
+  padding: 20px 24px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* 卡片悬停效果 */
+.ant-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* 自定义滚动条样式 */
+.prompt-card-description::-webkit-scrollbar {
+  width: 6px;
+}
+
+.prompt-card-description::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.prompt-card-description::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.prompt-card-description::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* AI 快捷入口样式 */
+.ai-links-section {
+  background: #fff;
+  padding: 16px 24px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.ai-quick-links {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.ai-link-item {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border: 1px solid;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 13px;
+  transition: all 0.3s ease;
+  background: transparent;
+}
+
+.ai-link-item:hover {
+  background: rgba(0, 0, 0, 0.02);
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Markdown 内容样式 */
+.markdown-content {
+  line-height: 1.8;
+  color: #1f1f1f;
+}
+
+.markdown-content h1 {
+  font-size: 28px;
+  font-weight: 600;
+  margin: 32px 0 16px;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 8px;
+}
+
+.markdown-content h2 {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 28px 0 12px;
+}
+
+.markdown-content h3 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 24px 0 10px;
+}
+
+.markdown-content p {
+  margin: 16px 0;
+  line-height: 1.8;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  margin: 16px 0;
+  padding-left: 24px;
+}
+
+.markdown-content li {
+  margin: 8px 0;
+  line-height: 1.8;
+}
+
+.markdown-content code {
+  background: #f5f5f5;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 14px;
+  color: #e83e8c;
+}
+
+.markdown-content pre {
+  background: #f5f5f5;
+  padding: 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 16px 0;
+}
+
+.markdown-content pre code {
+  background: none;
+  padding: 0;
+  color: #1f1f1f;
+}
+
+.markdown-content blockquote {
+  border-left: 4px solid #1890ff;
+  padding-left: 16px;
+  margin: 16px 0;
+  color: #595959;
+  font-style: italic;
+}
+
+.markdown-content a {
+  color: #1890ff;
+  text-decoration: none;
+}
+
+.markdown-content a:hover {
+  text-decoration: underline;
+}
+
+.markdown-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+}
+
+.markdown-content th,
+.markdown-content td {
+  border: 1px solid #f0f0f0;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.markdown-content th {
+  background: #fafafa;
+  font-weight: 600;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  /* Header 移动端优化 */
+  .site-header {
+    padding: 0 12px !important;
+    height: 56px !important;
+    overflow: hidden !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  .site-title {
+    font-size: 14px !important;
+    margin: 0 8px 0 0 !important;
+    line-height: 56px !important;
+    height: 56px !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  .site-menu {
+    font-size: 12px !important;
+    line-height: 56px !important;
+    height: 56px !important;
+    overflow: hidden !important;
+    border-bottom: none !important;
+  }
+
+  .site-menu .ant-menu-item {
+    padding: 0 8px !important;
+    margin: 0 4px !important;
+    height: 56px !important;
+    line-height: 56px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+  }
+
+  .site-menu .ant-menu-item::after {
+    bottom: 0 !important;
+    top: auto !important;
+    height: 2px !important;
+  }
+
+  .site-menu .ant-menu-item-selected {
+    background: transparent !important;
+  }
+
+  .site-menu .ant-menu-item-selected::after {
+    bottom: 0 !important;
+    top: auto !important;
+    height: 2px !important;
+  }
+
+  .site-menu .ant-menu-item:hover {
+    background: transparent !important;
+  }
+
+  /* Content 移动端优化 */
+  .ant-layout-content {
+    padding: 12px !important;
+    margin-top: 56px !important;
+  }
+
+  /* 筛选栏移动端优化 */
+  .filter-bar {
+    padding: 16px !important;
+    border-radius: 8px !important;
+  }
+
+  .filter-space {
+    width: 100% !important;
+    flex-direction: column !important;
+  }
+
+  .filter-space .ant-space-item {
+    width: 100% !important;
+  }
+
+  .filter-space .ant-input-search {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .filter-space .ant-select {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* AI 快捷入口移动端优化 */
+  .ai-links-section {
+    padding: 12px 16px !important;
+    border-radius: 8px !important;
+  }
+
+  .ai-quick-links {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+
+  .ai-links-label {
+    margin-bottom: 8px !important;
+    margin-right: 0 !important;
+    display: block !important;
+    width: 100% !important;
+  }
+
+  .ai-links-space {
+    width: 100% !important;
+  }
+
+  .ai-link-item {
+    font-size: 12px !important;
+    padding: 5px 12px !important;
+  }
+
+  /* 卡片移动端优化 */
+  .ant-card {
+    border-radius: 8px !important;
+  }
+
+  .ant-card-body {
+    padding: 16px !important;
+  }
+
+  .ant-card .ant-typography {
+    font-size: 14px !important;
+  }
+
+  /* 卡片按钮移动端优化 */
+  .ant-card .ant-btn {
+    font-size: 12px !important;
+    padding: 4px 8px !important;
+  }
+
+  /* 卡片标签移动端优化 */
+  .ant-card .ant-tag {
+    font-size: 11px !important;
+    padding: 2px 8px !important;
+    margin: 2px !important;
+  }
+
+  /* 卡片图片/视频移动端优化 */
+  .ant-card img,
+  .ant-card video {
+    height: 150px !important;
+  }
+
+  .prompt-card-description {
+    height: 100px !important;
+    font-size: 13px !important;
+  }
+
+  /* 文章标题移动端优化 */
+  .article-title {
+    font-size: 24px !important;
+    line-height: 1.4 !important;
+    margin-bottom: 12px !important;
+  }
+
+  /* Markdown 内容移动端优化 */
+  .markdown-content {
+    font-size: 14px;
+  }
+
+  .markdown-content h1 {
+    font-size: 24px !important;
+    margin: 24px 0 12px !important;
+  }
+
+  .markdown-content h2 {
+    font-size: 20px !important;
+    margin: 20px 0 10px !important;
+  }
+
+  .markdown-content h3 {
+    font-size: 18px !important;
+    margin: 16px 0 8px !important;
+  }
+
+  /* 抽屉移动端优化 */
+  .ant-drawer-content-wrapper {
+    width: 100% !important;
+  }
+
+  .ant-drawer-header {
+    padding: 16px !important;
+  }
+
+  .ant-drawer-body {
+    padding: 16px !important;
+  }
+
+  /* 列表项移动端优化 */
+  .ant-list-item {
+    padding: 16px 0 !important;
+  }
+
+  .ant-list-item-meta-title {
+    font-size: 16px !important;
+  }
+
+  .ant-list-item-meta-description {
+    font-size: 13px !important;
+  }
+
+  /* 分页移动端优化 */
+  .ant-pagination {
+    margin: 16px 0 !important;
+  }
+
+  .ant-pagination-options {
+    display: none !important;
+  }
+
+  .ant-pagination-item {
+    min-width: 32px !important;
+    height: 32px !important;
+    line-height: 30px !important;
+    font-size: 12px !important;
+  }
+
+  /* 文章分类卡片移动端优化 */
+  .ant-card-head-title {
+    font-size: 16px !important;
+  }
+
+  /* Footer 移动端优化 */
+  .ant-layout-footer {
+    padding: 16px !important;
+    font-size: 12px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .site-header {
+    height: 52px !important;
+  }
+
+  .site-title {
+    font-size: 12px !important;
+    line-height: 52px !important;
+  }
+
+  .site-menu {
+    font-size: 11px !important;
+    line-height: 52px !important;
+    height: 52px !important;
+  }
+
+  .site-menu .ant-menu-item {
+    padding: 0 4px !important;
+    margin: 0 2px !important;
+    height: 52px !important;
+    line-height: 52px !important;
+  }
+
+  .ant-layout-content {
+    margin-top: 52px !important;
+  }
+
+  .article-title {
+    font-size: 20px !important;
+  }
+
+  .markdown-content h1 {
+    font-size: 20px !important;
+  }
+
+  .markdown-content h2 {
+    font-size: 18px !important;
+  }
+
+  .markdown-content h3 {
+    font-size: 16px !important;
+  }
+
+  .ai-link-item {
+    font-size: 11px !important;
+    padding: 4px 10px !important;
+  }
+
+  .ant-card-body {
+    padding: 12px !important;
+  }
+
+  .filter-bar {
+    padding: 12px !important;
+  }
+
+  .ai-links-section {
+    padding: 10px 12px !important;
+  }
+}
+
