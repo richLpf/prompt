@@ -155,8 +155,17 @@ export async function fetchPrompts(
       queryParams.append('professions', professions.join(','));
     }
     
-    // 使用相对路径，Next.js 会自动通过 rewrites 代理到后端
-    const response = await fetch(`/api/prompts?${queryParams.toString()}`, {
+    // 生产环境直接请求外部 API: https://prompt-api.questionlearn.cn
+    // 优先使用环境变量，如果没有设置，生产环境使用 https://prompt-api.questionlearn.cn
+    // 开发环境（localhost）继续使用代理路径
+    const apiUrl = process.env.NEXT_PUBLIC_PROMPTS_API_URL 
+      || (typeof window !== 'undefined' && 
+          window.location.hostname !== 'localhost' && 
+          window.location.hostname !== '127.0.0.1'
+          ? 'https://prompt-api.questionlearn.cn'
+          : '/api/prompts');
+    
+    const response = await fetch(`${apiUrl}?${queryParams.toString()}`, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
