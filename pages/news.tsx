@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import {
   Layout,
@@ -11,20 +11,56 @@ import {
   Space,
   Row,
   Col,
-  Empty
+  Empty,
+  Spin,
+  message
 } from 'antd';
 import { EyeOutlined, CalendarOutlined } from '@ant-design/icons';
-import { articles, articleCategories } from '../data/articles';
+import { articleCategories } from '../data/articles';
+import type { Article } from '../data/articles';
 import type { PromptCategory } from '../data/prompts';
 import { promptCategories } from '../data/prompts';
+import { fetchArticles, type ArticleResponse } from '../utils/api';
 
 const { Header, Content, Footer } = Layout;
 const { Title, Text, Paragraph } = Typography;
+
+// 将 API 返回的数据转换为 Article 格式
+function convertArticleResponseToItem(response: ArticleResponse): Article {
+  // 将 ISO 8601 格式的日期转换为 YYYY-MM-DD 格式
+  const formatDate = (dateString: string): string => {
+    try {
+      const date = new Date(dateString);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } catch (error) {
+      console.error('日期格式转换失败:', error);
+      return dateString.split('T')[0]; // 降级方案
+    }
+  };
+
+  return {
+    id: response.ID.toString(),
+    title: response.Title,
+    description: response.Description,
+    content: response.Content,
+    category: response.Category,
+    publishDate: formatDate(response.PublishDate),
+    views: response.Views,
+    author: response.Author || undefined
+  };
+}
 
 export default function NewsPage() {
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState<string>('全部');
   const [currentPage, setCurrentPage] = useState(1);
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [total, setTotal] = useState(0);
+  const [availableCategories, setAvailableCategories] = useState<string[]>(['全部']);
   const pageSize = 10;
 
   const menuItems = [
@@ -47,23 +83,52 @@ export default function NewsPage() {
     }
   };
 
-  // 筛选文章
-  const filteredArticles = useMemo(() => {
-    if (selectedCategory === '全部') {
-      return articles;
-    }
-    return articles.filter((article) => article.category === selectedCategory);
-  }, [selectedCategory]);
+  // 获取文章数据
+  useEffect(() => {
+    const loadArticles = async () => {
+      setLoading(true);
+      try {
+        const result = await fetchArticles({
+          page: currentPage,
+          pageSize,
+          category: selectedCategory === '全部' ? undefined : selectedCategory
+        });
 
-  // 分页数据
-  const paginatedArticles = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    const end = start + pageSize;
-    return filteredArticles.slice(start, end);
-  }, [filteredArticles, currentPage]);
+        const convertedArticles = result.items.map(convertArticleResponseToItem);
+        setArticles(convertedArticles);
+        setTotal(result.total);
+
+        // 从文章数据中提取所有分类（用于显示分类标签）
+        // 如果 API 返回了所有分类，可以在这里更新
+        // 目前使用静态分类列表，但保留扩展能力
+      } catch (error) {
+        console.error('加载文章失败:', error);
+        message.error('加载文章失败，请稍后重试');
+        setArticles([]);
+        setTotal(0);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadArticles();
+  }, [currentPage, selectedCategory]);
 
   const handleArticleClick = (articleId: string) => {
     router.push(`/news/${articleId}`);
+  };
+
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category);
+    setCurrentPage(1); // 切换分类时重置到第一页
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    // 滚动到顶部
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   return (
@@ -106,11 +171,16 @@ export default function NewsPage() {
                 bordered={false}
                 style={{ marginBottom: 24 }}
               >
-                {paginatedArticles.length === 0 ? (
+                {loading ? (
+                  <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                    <Spin size="large" />
+                    <div style={{ marginTop: 16, color: '#999' }}>加载中...</div>
+                  </div>
+                ) : articles.length === 0 ? (
                   <Empty description="暂无文章" />
                 ) : (
                   <List
-                    dataSource={paginatedArticles}
+                    dataSource={articles}
                     renderItem={(article) => (
                       <List.Item
                         style={{
@@ -176,9 +246,9 @@ export default function NewsPage() {
                 <div style={{ marginTop: 24, textAlign: 'center' }}>
                   <Pagination
                     current={currentPage}
-                    total={filteredArticles.length}
+                    total={total}
                     pageSize={pageSize}
-                    onChange={setCurrentPage}
+                    onChange={handlePageChange}
                     showSizeChanger={false}
                     showQuickJumper
                     showTotal={(total) => `共 ${total} 篇文章`}
@@ -195,23 +265,23 @@ export default function NewsPage() {
                 style={{ position: 'sticky', top: 24 }}
               >
                 <Space size={[8, 8]} wrap>
-                  {articleCategories.map((category) => (
-                    <Tag
-                      key={category}
-                      color={selectedCategory === category ? 'blue' : 'default'}
-                      style={{
-                        cursor: 'pointer',
-                        padding: '4px 12px',
-                        fontSize: 14
-                      }}
-                      onClick={() => {
-                        setSelectedCategory(category);
-                        setCurrentPage(1);
-                      }}
-                    >
-                      {category}
-                    </Tag>
-                  ))}
+                  {articleCategories.map((category) => {
+                    // 检查该分类是否有文章（可选：根据实际数据动态显示）
+                    return (
+                      <Tag
+                        key={category}
+                        color={selectedCategory === category ? 'blue' : 'default'}
+                        style={{
+                          cursor: 'pointer',
+                          padding: '4px 12px',
+                          fontSize: 14
+                        }}
+                        onClick={() => handleCategoryChange(category)}
+                      >
+                        {category}
+                      </Tag>
+                    );
+                  })}
                 </Space>
               </Card>
             </Col>
@@ -219,11 +289,13 @@ export default function NewsPage() {
         </div>
       </Content>
       <Footer style={{ textAlign: 'center' }}>
-        数据参考自{' '}
-        <a href="https://PromptManage.xin/prompts" target="_blank" rel="noreferrer">
-          PromptManage
-        </a>{' '}
-        ，用于演示三大提示词目录
+        <a
+          href="https://chromewebstore.google.com/detail/prompt-manager/mpbmllfmbcbonjmlmkfkjhdfmlccffgp"
+          target="_blank"
+          rel="noreferrer"
+        >
+          chrome提示词插件
+        </a>
       </Footer>
     </Layout>
   );

@@ -11,13 +11,15 @@ import {
   Row,
   Select,
   Space,
+  Spin,
   Tag,
   Typography
 } from 'antd';
 import { CopyOutlined, EyeOutlined } from '@ant-design/icons';
 import type { PromptCategory, PromptItem } from '../data/prompts';
-import { promptCategories, prompts } from '../data/prompts';
+import { promptCategories } from '../data/prompts';
 import { AIQuickLinks } from './AIQuickLinks';
+import { fetchPrompts, type PromptResponse } from '../utils/api';
 
 const { Paragraph, Text, Title } = Typography;
 
@@ -26,16 +28,87 @@ interface PromptCatalogProps {
   onCategoryChange: (category: PromptCategory) => void;
 }
 
+// 将 API 返回的数据转换为 PromptItem 格式
+// 将 API 返回的数据转换为 PromptItem 格式
+function convertPromptResponseToItem(response: PromptResponse): PromptItem {
+  return {
+    id: response.ID.toString(),
+    category: response.Category,
+    title: response.Title,
+    description: response.Description,
+    example: response.Example && response.Example.trim() ? response.Example : undefined,
+    imageUrl: response.ImageURL && response.ImageURL.trim() ? response.ImageURL : undefined,
+    videoUrl: response.VideoURL && response.VideoURL.trim() ? response.VideoURL : undefined,
+    tags: response.Tags.map((tag) => tag.Tag),
+    source: response.Source && response.Source.trim() ? response.Source : undefined,
+    professions: response.Professions.map((prof) => prof.Job)
+  };
+}
+
 export function PromptCatalog({
   activeCategory,
   onCategoryChange
 }: PromptCatalogProps) {
   const [searchValue, setSearchValue] = useState('');
+  const [debouncedSearchValue, setDebouncedSearchValue] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedProfessions, setSelectedProfessions] = useState<string[]>([]);
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [selectedPrompt, setSelectedPrompt] = useState<PromptItem | null>(null);
   const [drawerWidth, setDrawerWidth] = useState(600);
+  const [prompts, setPrompts] = useState<PromptItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [allTags, setAllTags] = useState<string[]>([]);
+  const [allProfessions, setAllProfessions] = useState<string[]>([]);
+
+  // 搜索防抖：延迟 500ms 更新搜索值
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchValue(searchValue);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchValue]);
+
+  // 获取提示词数据
+  useEffect(() => {
+    const loadPrompts = async () => {
+      setLoading(true);
+      try {
+        const result = await fetchPrompts({
+          category: activeCategory,
+          page: 1,
+          pageSize: 1000, // 获取所有数据，如果后端支持分页可以优化
+          search: debouncedSearchValue || undefined,
+          tags: selectedTags.length > 0 ? selectedTags : undefined,
+          professions: selectedProfessions.length > 0 ? selectedProfessions : undefined
+        });
+
+        const convertedPrompts = result.items.map(convertPromptResponseToItem);
+        setPrompts(convertedPrompts);
+
+        // 提取所有标签和职业（用于筛选器）
+        const tagSet = new Set<string>();
+        const professionSet = new Set<string>();
+        convertedPrompts.forEach((prompt) => {
+          prompt.tags.forEach((tag) => tagSet.add(tag));
+          if (prompt.professions) {
+            prompt.professions.forEach((profession) => professionSet.add(profession));
+          }
+        });
+        setAllTags(Array.from(tagSet).sort());
+        setAllProfessions(Array.from(professionSet).sort());
+      } catch (error) {
+        console.error('加载提示词失败:', error);
+        message.error('加载提示词失败，请稍后重试');
+        setPrompts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPrompts();
+  }, [activeCategory, debouncedSearchValue, selectedTags, selectedProfessions]);
 
   useEffect(() => {
     const updateDrawerWidth = () => {
@@ -49,45 +122,11 @@ export function PromptCatalog({
     return () => window.removeEventListener('resize', updateDrawerWidth);
   }, []);
 
-  const allTags = useMemo(() => {
-    const tagSet = new Set<string>();
-    prompts.forEach((prompt) => prompt.tags.forEach((tag) => tagSet.add(tag)));
-    return Array.from(tagSet);
-  }, []);
-
-  const allProfessions = useMemo(() => {
-    const professionSet = new Set<string>();
-    prompts.forEach((prompt) => {
-      if (prompt.professions) {
-        prompt.professions.forEach((profession) => professionSet.add(profession));
-      }
-    });
-    return Array.from(professionSet).sort();
-  }, []);
-
   const filteredPrompts = useMemo(() => {
-    return prompts.filter((prompt) => {
-      if (prompt.category !== activeCategory) {
-        return false;
-      }
-      const matchSearch =
-        !searchValue ||
-        prompt.title.toLowerCase().includes(searchValue.toLowerCase()) ||
-        prompt.description.toLowerCase().includes(searchValue.toLowerCase()) ||
-        (prompt.example &&
-          prompt.example.toLowerCase().includes(searchValue.toLowerCase()));
-      const matchTags =
-        selectedTags.length === 0 ||
-        selectedTags.every((tag) => prompt.tags.includes(tag));
-      const matchProfessions =
-        selectedProfessions.length === 0 ||
-        (prompt.professions &&
-          selectedProfessions.some((profession) =>
-            prompt.professions!.includes(profession)
-          ));
-      return matchSearch && matchTags && matchProfessions;
-    });
-  }, [activeCategory, searchValue, selectedTags, selectedProfessions]);
+    // 由于已经在 API 层面进行了筛选，这里直接返回 prompts
+    // 如果需要前端二次筛选，可以在这里添加逻辑
+    return prompts;
+  }, [prompts]);
 
   const handleCopy = (prompt: PromptItem) => {
     // 确保只在客户端执行
@@ -231,7 +270,14 @@ export function PromptCatalog({
       </div>
 
       {/* 卡片展示 */}
-      {filteredPrompts.length === 0 ? (
+      {loading ? (
+        <Card style={{ marginTop: 24 }}>
+          <div style={{ textAlign: 'center', padding: '40px 0' }}>
+            <Spin size="large" />
+            <div style={{ marginTop: 16, color: '#999' }}>加载中...</div>
+          </div>
+        </Card>
+      ) : filteredPrompts.length === 0 ? (
         <Card style={{ marginTop: 24 }}>
           <Empty description="暂无匹配的提示词" />
         </Card>

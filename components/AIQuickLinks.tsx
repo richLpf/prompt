@@ -1,5 +1,7 @@
-import { Space, Typography } from 'antd';
+import { useEffect, useState, useMemo } from 'react';
+import { Space, Typography, Spin } from 'antd';
 import type { PromptCategory } from '../data/prompts';
+import { fetchPlatforms, type PlatformResponse } from '../utils/api';
 
 const { Text } = Typography;
 
@@ -9,137 +11,121 @@ interface AIPlatform {
   color: string;
 }
 
-// 文生文平台（AI 聊天）
-const textPlatforms: AIPlatform[] = [
-  {
-    name: 'ChatGPT',
-    url: 'https://chat.openai.com',
-    color: '#10a37f'
-  },
-  {
-    name: 'DeepSeek',
-    url: 'https://www.deepseek.com',
-    color: '#1e1e1e'
-  },
-  {
-    name: '豆包',
-    url: 'https://www.doubao.com',
-    color: '#ff6b35'
-  },
-  {
-    name: '通义千问',
-    url: 'https://tongyi.aliyun.com',
-    color: '#1890ff'
-  },
-  {
-    name: '文心一言',
-    url: 'https://yiyan.baidu.com',
-    color: '#eb2f96'
-  },
-  {
-    name: 'Kimi',
-    url: 'https://kimi.moonshot.cn',
-    color: '#722ed1'
-  },
-  {
-    name: 'Claude',
-    url: 'https://claude.ai',
-    color: '#fa8c16'
-  },
-  {
-    name: 'Gemini',
-    url: 'https://gemini.google.com',
-    color: '#52c41a'
-  }
+// 预设颜色列表，用于为平台分配颜色
+const colorPalette = [
+  '#10a37f',
+  '#1e1e1e',
+  '#ff6b35',
+  '#1890ff',
+  '#eb2f96',
+  '#722ed1',
+  '#fa8c16',
+  '#52c41a',
+  '#2d2d2d',
+  '#8b5cf6',
+  '#000000'
 ];
 
-// 文生图平台（AI 绘图）
-const imagePlatforms: AIPlatform[] = [
-  {
-    name: 'Midjourney',
-    url: 'https://www.midjourney.com',
-    color: '#2d2d2d'
-  },
-  {
-    name: 'Stable Diffusion',
-    url: 'https://stability.ai',
-    color: '#8b5cf6'
-  },
-  {
-    name: 'DALL-E',
-    url: 'https://openai.com/dall-e-3',
-    color: '#10a37f'
-  },
-  {
-    name: 'Leonardo.ai',
-    url: 'https://leonardo.ai',
-    color: '#ff6b35'
-  },
-  {
-    name: '文心一格',
-    url: 'https://yige.baidu.com',
-    color: '#eb2f96'
-  },
-  {
-    name: '通义万相',
-    url: 'https://tongyi.aliyun.com/wanxiang',
-    color: '#1890ff'
-  },
-  {
-    name: '6pen',
-    url: 'https://6pen.art',
-    color: '#722ed1'
-  },
-  {
-    name: 'Tiamat',
-    url: 'https://www.tiamat.ai',
-    color: '#fa8c16'
+// 根据平台名称生成颜色（确保相同名称总是得到相同颜色）
+function getColorForPlatform(name: string, index: number): string {
+  // 使用名称的哈希值来选择颜色，确保相同名称总是得到相同颜色
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
-];
+  return colorPalette[Math.abs(hash) % colorPalette.length];
+}
 
-// 文生视频平台
-const videoPlatforms: AIPlatform[] = [
-  {
-    name: 'Runway',
-    url: 'https://runwayml.com',
-    color: '#000000'
-  },
-  {
-    name: 'Pika',
-    url: 'https://pika.art',
-    color: '#ff6b35'
-  },
-  {
-    name: 'Stable Video',
-    url: 'https://stability.ai/stable-video',
-    color: '#8b5cf6'
-  },
-  {
-    name: 'Kling AI',
-    url: 'https://klingai.com',
-    color: '#1890ff'
-  },
-  {
-    name: 'Gen-2',
-    url: 'https://runwayml.com/gen2',
-    color: '#000000'
+// 将 PromptCategory 映射到 API 的 ai_chat_type
+function mapCategoryToAIChatType(
+  category: PromptCategory
+): 'text_generation' | 'image_generation' | 'video_generation' {
+  switch (category) {
+    case 'text':
+      return 'text_generation';
+    case 'image':
+      return 'image_generation';
+    case 'video':
+      return 'video_generation';
+    default:
+      return 'text_generation';
   }
-];
+}
+
+// 获取分类对应的标签文本
+function getLabelForCategory(category: PromptCategory): string {
+  switch (category) {
+    case 'text':
+      return 'AI 聊天平台：';
+    case 'image':
+      return 'AI 绘图平台：';
+    case 'video':
+      return 'AI 视频平台：';
+    default:
+      return 'AI 聊天平台：';
+  }
+}
 
 interface AIQuickLinksProps {
   activeCategory: PromptCategory;
 }
 
 export function AIQuickLinks({ activeCategory }: AIQuickLinksProps) {
-  let platforms: AIPlatform[] = textPlatforms;
-  let label = 'AI 聊天平台：';
+  const [allPlatforms, setAllPlatforms] = useState<PlatformResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (activeCategory === 'image') {
-    platforms = imagePlatforms;
-    label = 'AI 绘图平台：';
-  } else if (activeCategory === 'video') {
-    platforms = videoPlatforms;
-    label = 'AI 视频平台：';
+  // 只在组件挂载时加载一次所有平台数据
+  useEffect(() => {
+    const loadPlatforms = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const platformData = await fetchPlatforms();
+        setAllPlatforms(platformData);
+      } catch (err) {
+        console.error('加载平台列表失败:', err);
+        setError('加载平台列表失败');
+        setAllPlatforms([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPlatforms();
+  }, []); // 只在组件挂载时执行一次
+
+  // 根据当前分类过滤平台
+  const platforms = useMemo(() => {
+    const aiChatType = mapCategoryToAIChatType(activeCategory);
+    const filtered = allPlatforms.filter(
+      (platform) => platform.AIChatType === aiChatType
+    );
+    
+    // 将接口返回的数据转换为组件需要的格式
+    return filtered.map((platform: PlatformResponse, index: number) => ({
+      name: platform.Title,
+      url: platform.Link,
+      color: getColorForPlatform(platform.Title, index)
+    }));
+  }, [allPlatforms, activeCategory]);
+
+  const label = getLabelForCategory(activeCategory);
+
+  if (loading) {
+    return (
+      <div className="ai-quick-links">
+        <Text type="secondary" className="ai-links-label" style={{ marginRight: 12, fontSize: 14 }}>
+          {label}
+        </Text>
+        <Spin size="small" />
+      </div>
+    );
+  }
+
+  if (error || platforms.length === 0) {
+    return null; // 如果加载失败或没有平台，不显示任何内容
   }
 
   return (

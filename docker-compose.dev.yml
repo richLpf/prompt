@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  prompt-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: prompt-web-dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - API_BASE_URL=${API_BASE_URL:-http://host.docker.internal:8080}
+      - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-}
+    volumes:
+      # 挂载源代码以便热重载（开发模式）
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    command: pnpm dev
+    restart: unless-stopped
+    networks:
+      - prompt-network
+
+networks:
+  prompt-network:
+    driver: bridge
+

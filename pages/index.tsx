@@ -70,11 +70,13 @@ export default function HomePage() {
         </div>
       </Content>
       <Footer style={{ textAlign: 'center' }}>
-        数据参考自{' '}
-        <a href="https://PromptManage.xin/prompts" target="_blank" rel="noreferrer">
-          PromptManage
-        </a>{' '}
-        ，用于演示三大提示词目录
+        <a
+          href="https://chromewebstore.google.com/detail/prompt-manager/mpbmllfmbcbonjmlmkfkjhdfmlccffgp"
+          target="_blank"
+          rel="noreferrer"
+        >
+          chrome提示词插件
+        </a>
       </Footer>
     </Layout>
   );

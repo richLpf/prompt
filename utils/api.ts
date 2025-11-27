@@ -1,0 +1,234 @@
+// API 服务工具函数
+
+export interface PlatformResponse {
+  ID: number;
+  Title: string;
+  AIChatType: 'text_generation' | 'image_generation' | 'video_generation';
+  Link: string;
+  SortOrder: number;
+  IsActive: boolean;
+  CreatedAt: string;
+  UpdatedAt: string;
+}
+
+export interface ApiResponse<T> {
+  code: number;
+  message: string;
+  data: T;
+}
+
+// 提示词相关类型定义
+export interface PromptTagResponse {
+  ID: number;
+  PromptID: number;
+  Tag: string;
+}
+
+export interface PromptProfessionResponse {
+  ID: number;
+  PromptID: number;
+  Job: string;
+}
+
+export interface PromptResponse {
+  ID: number;
+  Category: 'text' | 'image' | 'video';
+  Title: string;
+  Description: string;
+  Example: string;
+  ImageURL: string;
+  VideoURL: string;
+  Source: string;
+  CopyCount: number;
+  Tags: PromptTagResponse[];
+  Professions: PromptProfessionResponse[];
+  CreatedAt: string;
+  UpdatedAt: string;
+}
+
+export interface PromptsListResponse {
+  items: PromptResponse[];
+  page: number;
+  pageSize: number;
+  total: number;
+}
+
+export interface FetchPromptsParams {
+  category: 'text' | 'image' | 'video';
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  tags?: string[];
+  professions?: string[];
+}
+
+// 文章相关类型定义
+export interface ArticleResponse {
+  ID: number;
+  Title: string;
+  Description: string;
+  Content: string;
+  Category: string;
+  PublishDate: string; // ISO 8601 格式
+  Views: number;
+  Author: string;
+  CreatedAt: string;
+  UpdatedAt: string;
+}
+
+export interface ArticlesListResponse {
+  items: ArticleResponse[];
+  page: number;
+  pageSize: number;
+  total: number;
+}
+
+export interface FetchArticlesParams {
+  page?: number;
+  pageSize?: number;
+  category?: string;
+  search?: string;
+}
+
+/**
+ * 获取所有 AI 平台列表
+ * @returns 平台列表
+ */
+export async function fetchPlatforms(): Promise<PlatformResponse[]> {
+  try {
+    // 使用相对路径，Next.js 会自动通过 rewrites 代理到后端
+    const response = await fetch('/api/platforms', {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result: ApiResponse<PlatformResponse[]> = await response.json();
+
+    if (result.code !== 0) {
+      throw new Error(result.message || '获取平台列表失败');
+    }
+
+    // 只返回激活状态的平台，并按 SortOrder 排序
+    return result.data
+      .filter((platform) => platform.IsActive)
+      .sort((a, b) => a.SortOrder - b.SortOrder);
+  } catch (error) {
+    console.error('获取平台列表失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 获取提示词列表
+ * @param params 查询参数
+ * @returns 提示词列表及分页信息
+ */
+export async function fetchPrompts(
+  params: FetchPromptsParams
+): Promise<PromptsListResponse> {
+  try {
+    const { category, page = 1, pageSize = 10, search, tags, professions } = params;
+    
+    // 构建查询参数
+    const queryParams = new URLSearchParams({
+      category,
+      page: page.toString(),
+      pageSize: pageSize.toString()
+    });
+    
+    if (search) {
+      queryParams.append('search', search);
+    }
+    
+    if (tags && tags.length > 0) {
+      queryParams.append('tags', tags.join(','));
+    }
+    
+    if (professions && professions.length > 0) {
+      queryParams.append('professions', professions.join(','));
+    }
+    
+    // 使用相对路径，Next.js 会自动通过 rewrites 代理到后端
+    const response = await fetch(`/api/prompts?${queryParams.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result: ApiResponse<PromptsListResponse> = await response.json();
+
+    if (result.code !== 0) {
+      throw new Error(result.message || '获取提示词列表失败');
+    }
+
+    return result.data;
+  } catch (error) {
+    console.error('获取提示词列表失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 获取文章列表
+ * @param params 查询参数
+ * @returns 文章列表及分页信息
+ */
+export async function fetchArticles(
+  params: FetchArticlesParams = {}
+): Promise<ArticlesListResponse> {
+  try {
+    const { page = 1, pageSize = 10, category, search } = params;
+    
+    // 构建查询参数
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+      pageSize: pageSize.toString()
+    });
+    
+    if (category && category !== '全部') {
+      queryParams.append('category', category);
+    }
+    
+    if (search) {
+      queryParams.append('search', search);
+    }
+    
+    // 使用相对路径，Next.js 会自动通过 rewrites 代理到后端
+    const response = await fetch(`/api/articles?${queryParams.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result: ApiResponse<ArticlesListResponse> = await response.json();
+
+    if (result.code !== 0) {
+      throw new Error(result.message || '获取文章列表失败');
+    }
+
+    return result.data;
+  } catch (error) {
+    console.error('获取文章列表失败:', error);
+    throw error;
+  }
+}
+
