@@ -162,7 +162,7 @@ export async function fetchPrompts(
       || (typeof window !== 'undefined' && 
           window.location.hostname !== 'localhost' && 
           window.location.hostname !== '127.0.0.1'
-          ? 'https://47.100.3.71:9000/api/prompts'
+          ? 'https://prompt-api.questionlearn.cn/api/prompts'
           : '/api/prompts');
     
     const response = await fetch(`${apiUrl}?${queryParams.toString()}`, {
