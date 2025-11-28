@@ -11,7 +11,7 @@ const nextConfig = {
         source: '/api/platforms',
         destination: `${apiBaseUrl}/api/platforms`
       },
-      // /api/prompts 不再使用代理，直接在前端请求 https://prompt-api.questionlearn.cn
+      // /api/prompts 不再使用代理，直接在前端请求 http://47.100.3.71/api
       {
         source: '/api/articles',
         destination: `${apiBaseUrl}/api/articles`
