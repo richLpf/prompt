@@ -155,14 +155,14 @@ export async function fetchPrompts(
       queryParams.append('professions', professions.join(','));
     }
     
-    // 生产环境直接请求外部 API: http://47.100.3.71/api
-    // 优先使用环境变量，如果没有设置，生产环境使用 http://47.100.3.71/api
+    // 生产环境直接请求外部 API: http://47.100.3.71:9000/api/prompts
+    // 优先使用环境变量，如果没有设置，生产环境使用 http://47.100.3.71:9000/api/prompts
     // 开发环境（localhost）继续使用代理路径
     const apiUrl = process.env.NEXT_PUBLIC_PROMPTS_API_URL 
       || (typeof window !== 'undefined' && 
           window.location.hostname !== 'localhost' && 
           window.location.hostname !== '127.0.0.1'
-          ? 'http://47.100.3.71/api'
+          ? 'http://47.100.3.71:9000/api/prompts'
           : '/api/prompts');
     
     const response = await fetch(`${apiUrl}?${queryParams.toString()}`, {
