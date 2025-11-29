@@ -96,8 +96,16 @@ export interface FetchArticlesParams {
  */
 export async function fetchPlatforms(): Promise<PlatformResponse[]> {
   try {
-    // 使用相对路径，Next.js 会自动通过 rewrites 代理到后端
-    const response = await fetch('/api/platforms', {
+    // 优先使用环境变量，如果没有设置，生产环境使用 https://prompt-api.questionlearn.cn/api/platforms
+    // 开发环境（localhost）继续使用代理路径
+    const apiUrl = process.env.NEXT_PUBLIC_PLATFORMS_API_URL 
+      || (typeof window !== 'undefined' && 
+          window.location.hostname !== 'localhost' && 
+          window.location.hostname !== '127.0.0.1'
+          ? 'https://prompt-api.questionlearn.cn/api/platforms'
+          : '/api/platforms');
+    
+    const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
@@ -215,8 +223,16 @@ export async function fetchArticles(
       queryParams.append('search', search);
     }
     
-    // 使用相对路径，Next.js 会自动通过 rewrites 代理到后端
-    const response = await fetch(`/api/articles?${queryParams.toString()}`, {
+    // 优先使用环境变量，如果没有设置，生产环境使用 https://prompt-api.questionlearn.cn/api/articles
+    // 开发环境（localhost）继续使用代理路径
+    const apiUrl = process.env.NEXT_PUBLIC_ARTICLES_API_URL 
+      || (typeof window !== 'undefined' && 
+          window.location.hostname !== 'localhost' && 
+          window.location.hostname !== '127.0.0.1'
+          ? 'https://prompt-api.questionlearn.cn/api/articles'
+          : '/api/articles');
+    
+    const response = await fetch(`${apiUrl}?${queryParams.toString()}`, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
