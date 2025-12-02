@@ -257,3 +257,47 @@ export async function fetchArticles(
   }
 }
 
+/**
+ * 获取单篇文章详情
+ * @param id 文章ID
+ * @returns 文章详情
+ */
+export async function fetchArticle(id: string | number): Promise<ArticleResponse> {
+  try {
+    // 优先使用环境变量，如果没有设置，生产环境使用 https://prompt-api.questionlearn.cn/api/articles
+    // 开发环境（localhost）继续使用代理路径
+    const baseUrl = process.env.NEXT_PUBLIC_ARTICLES_API_URL 
+      || (typeof window !== 'undefined' && 
+          window.location.hostname !== 'localhost' && 
+          window.location.hostname !== '127.0.0.1'
+          ? 'https://prompt-api.questionlearn.cn/api/articles'
+          : '/api/articles');
+    
+    // 构建详情页 URL: baseUrl/{id}
+    const apiUrl = `${baseUrl}/${id}`;
+    
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result: ApiResponse<ArticleResponse> = await response.json();
+
+    if (result.code !== 0) {
+      throw new Error(result.message || '获取文章详情失败');
+    }
+
+    return result.data;
+  } catch (error) {
+    console.error('获取文章详情失败:', error);
+    throw error;
+  }
+}
+

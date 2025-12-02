@@ -1,25 +1,72 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
-import { Layout, Card, Menu, Typography, Space, Button, Tag } from 'antd';
+import { Layout, Card, Menu, Typography, Space, Button, Tag, Spin, message } from 'antd';
 import { ArrowLeftOutlined, CalendarOutlined, EyeOutlined } from '@ant-design/icons';
-import { articles, type Article } from '../../data/articles';
+import type { Article } from '../../data/articles';
 import ReactMarkdown from 'react-markdown';
 import type { PromptCategory } from '../../data/prompts';
 import { promptCategories } from '../../data/prompts';
+import { fetchArticle, type ArticleResponse } from '../../utils/api';
 
 const { Header, Content, Footer } = Layout;
 const { Title, Text, Paragraph } = Typography;
+
+// 将 API 返回的数据转换为 Article 格式
+function convertArticleResponseToItem(response: ArticleResponse): Article {
+  // 将 ISO 8601 格式的日期转换为 YYYY-MM-DD 格式
+  const formatDate = (dateString: string): string => {
+    try {
+      const date = new Date(dateString);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } catch (error) {
+      console.error('日期格式转换失败:', error);
+      return dateString.split('T')[0]; // 降级方案
+    }
+  };
+
+  return {
+    id: response.ID.toString(),
+    title: response.Title,
+    description: response.Description,
+    content: response.Content,
+    category: response.Category,
+    publishDate: formatDate(response.PublishDate),
+    views: response.Views,
+    author: response.Author || undefined
+  };
+}
 
 export default function ArticleDetailPage() {
   const router = useRouter();
   const { id } = router.query;
   const [article, setArticle] = useState<Article | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (id && typeof id === 'string') {
-      const foundArticle = articles.find((a) => a.id === id);
-      setArticle(foundArticle || null);
-    }
+    const loadArticle = async () => {
+      if (!id || typeof id !== 'string') {
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const response = await fetchArticle(id);
+        const convertedArticle = convertArticleResponseToItem(response);
+        setArticle(convertedArticle);
+      } catch (error) {
+        console.error('加载文章失败:', error);
+        message.error('加载文章失败，请稍后重试');
+        setArticle(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadArticle();
   }, [id]);
 
   const menuItems = [
@@ -41,10 +88,21 @@ export default function ArticleDetailPage() {
     }
   };
 
+  if (loading) {
+    return (
+      <Layout style={{ minHeight: '100vh' }}>
+        <Content style={{ padding: '24px', textAlign: 'center', marginTop: 64 }}>
+          <Spin size="large" />
+          <div style={{ marginTop: 16, color: '#999' }}>加载中...</div>
+        </Content>
+      </Layout>
+    );
+  }
+
   if (!article) {
     return (
       <Layout style={{ minHeight: '100vh' }}>
-        <Content style={{ padding: '24px', textAlign: 'center' }}>
+        <Content style={{ padding: '24px', textAlign: 'center', marginTop: 64 }}>
           <Title level={3}>文章不存在</Title>
           <Button onClick={() => router.push('/news')}>返回列表</Button>
         </Content>
