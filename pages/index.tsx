@@ -20,12 +20,18 @@ export default function HomePage() {
     {
       key: 'news',
       label: 'AI 资讯'
+    },
+    {
+      key: 'contribute',
+      label: '贡献提示词'
     }
   ];
 
   const handleMenuClick = (info: { key: string }) => {
     if (info.key === 'news') {
       router.push('/news');
+    } else if (info.key === 'contribute') {
+      window.open('https://d0p1dcsh17r.feishu.cn/share/base/form/shrcnqbnFz0I6finkDBLSFJjsRh', '_blank');
     } else {
       setActiveCategory(info.key as PromptCategory);
     }

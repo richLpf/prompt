@@ -71,6 +71,10 @@ export default function NewsPage() {
     {
       key: 'news',
       label: 'AI 资讯'
+    },
+    {
+      key: 'contribute',
+      label: '贡献提示词'
     }
   ];
 
@@ -78,6 +82,8 @@ export default function NewsPage() {
     if (info.key === 'news') {
       // 已经在资讯页面，不需要跳转
       return;
+    } else if (info.key === 'contribute') {
+      window.open('https://d0p1dcsh17r.feishu.cn/share/base/form/shrcnqbnFz0I6finkDBLSFJjsRh', '_blank');
     } else {
       router.push('/');
     }
